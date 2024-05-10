@@ -1,0 +1,49 @@
+Reverse Proxy Service -> NSX Manager service for registering Transport Node
+After NSX 3.0, vDS can use with NSX if vSphere and vDS version is 7 or newer.
+For Overlay traffic, MTU on vDS need to be at least 1600, 1700 (Recommended) or 9000 (Jumbo Frame)
+No. of Uplinks and Teaming policy defines the number of TEPs created for Transport Node
+			-> Failover -> Only one TEP
+			-> Load Balance Source -> Balance as per vDS Port ID -> Active - Active -> Multiple TEPs
+			-> Load Balance Source - MAC -> Balance as per MAC Hash -> High Compute
+esxcli software vib list | grep -E 'nsx|vsip'
+vmkping -I (Interface) -s (Size of Package) -d (not defragment) -S vxlan (type of packate) (destination)
+Three NSX Forwarding Tables
+	-> TEP Table -> Segment VNI to Host TEP IP Address Mapping
+	-> ARP Table -> VM IP to MAC Mapping
+	-> MAC Table -> VM MAC to Host TEP IP Address Mapping
+Intratier Transit Link -> T0 to T1
+If T0 HA Mode is active active, then we can not run centralized services (NAT, VPN, Firewall)
+The Data Plane Development Kit (DPDK) is a set of data plane libraries and network interface controller drivers for fast packet processing
+DFW 	-> Ethernet -> L2 Rule
+	-> Emergency -> Quaratine Purpose
+	-> Infrastructure -> DNS, DHCP, AD
+	-> Environment -> based on type (Prod, Non-Prod)
+	-> Application -> Layer 7
+	-> on ESXi Host
+		-> summarize-dvfilter | grep -n 3 <VMName>
+		-> Get the vNIC name of stateful firewall
+		-> vsipioctl getrules -f <vNIC Name>
+			-> You can decrypt the address set
+			-> vsipioctl getaddrset -f <vNIC Name>
+				-> This will show the IP and MAC address
+
+Syslog	-> NSX Manager and Edge Node
+		-> set logging-server <IP_ADDR> proto <udp/tcp/tls> level <emer/alert/crit/err/warning/notice/info/debug>
+	-> ESXi
+		-> esxcli system syslog config set --loghost=udp://<IP_ADDR>  --log-level=debug
+		-> esxcli system syslog reload
+		-> esxcli system syslog config get
+
+Password Management	-> NSX Manager
+			-> get auth-policy cli lockout-period/max-auth-failures
+			-> set user <username> password-expiration <1-9999>
+			-> clear user <username> password-expiration
+
+
+Edge-bridge Profile	-> HA for Edge Cluster
+			-> Premptive	-> Move all the tasks once node is back
+			-> Non-premptive -> wait until another node is up and running fine
+
+
+Edge Cluster	-> Deploy new Edge Node
+		-> Go to Edge Cluster -> Go to Action -> Replace Edge Node from to

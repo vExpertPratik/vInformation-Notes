@@ -1,0 +1,51 @@
+esxcli network vm list -> Provide VM worldID <processID> details
+esxcli network vm port list -w <PortID>
+esxcli network nic list
+esxcli network nic down/up -n [vmnic2] <uplink name>
+esxcli network vswitch standard list
+esxcli network vswitch standard portgroup list
+esxcli network port stats get -p [esxtop -> n -> get port ID] <PortID Details>
+esxcli network nic stats get -n [vmnic2] <uplink details>
+esxcli network ip connection list -> netstat for ESX
+esxcli network ip neighbor list -> ARP Table
+nc -z <ESX_Server_Name> 1-500 <Port_Range> -> Netcat command
+nc -l <Port_Number> -> Keep the server in listening mode on specific port
+(time) nc <ESX_IP_Add> <Port_Number> < <File_Name> -> Transfer whole file on remote server
+
+esxcli system module list | grep -i <Package/driver name>i40en -> Check whether the respective driver module is up or not
+
+esxtop -> d -> f(to select column) -> Q -> value of AQLEN (Maxium queue depth)
+esxcli vsan debug controller list
+
+net-stats -l -> Gets the PortID of VMs and VMNICs
+pktcap-uw --switchport <switchportID>/--uplink vmnic0 <uplinkname> --dir 0(input)/1(output) -c <No._of_Packet_To_Capture> -p icmp -o - | tcpdump-uw -enr -  -> This will print the output
+
+esxcfg-vswitch -l -> to check which uplink is getting used for which traffic
+esxcfg-vmknic -l -> list down all the VMK interfaces
+esxcfg-nics -e -> List down the Enhanced mode compatibility
+
+vsish -e set /reliability/crashMe/Panic 1 -> Crash the ESX
+esxcli system coredump file list
+esxcli system coredump file get -> shows coredump path
+esxcfg-dumppart --file --copy --devname active -> Creating the ZIP File and shows the file path
+esxcfg-dumppart --log <Path of the file created by above command> -> Extract the coredump file and create new vmkernel-log file
+
+vmkfstools -x check /vmfs/volumes/my_datastore/my_disk.vmdk -> This command can help check or repair a corrupt virtual disk.
+vmkfstools -Ph <Datastore_Path> -> Provide datastore capacity details
+vmkfstools -e <.VMDK_File> -> Check the disk chain consistency [Content ID Comparing]
+
+service-control --list-services -> List all services with full form and short form
+service-control --status --all -> List running and Stopped services
+service-control --status/start/stop <service_name>
+
+vim-cmd vmsvc/getallvms
+
+grep -i virtualDev *.vmx -> Get the SCSI Protocol
+ls -al -> Get the size of *-flat.vmdk disk
+vmkfstools -c <Size> -d <thin/thick> -> Create new dummy temp VMDK file
+rm -f temp-flat.vmdk -> Delete dummy temp VMDK Flat file
+mv -i temp.vmdk <OGname>.vmdk -> Rename dummy temp file to original VM name
+edit the newly renamed file with correct SCSI Protocol and OGname-Flat.vmdk
+
+
+/sbin/firmwareConfig.py --reset
