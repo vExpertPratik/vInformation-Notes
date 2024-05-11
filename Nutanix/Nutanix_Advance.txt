@@ -1,0 +1,51 @@
+Performing Initial Cluster Setup
+
+1) Run NCC [https://portal.nutanix.com/page/documents/details?targetId=Acropolis-Upgrade-Guide-v6_1%3Ancc-ncc-checks-running-t.html]
+2) Setup NTP for Time synchronization [https://portal.nutanix.com/page/documents/details?targetId=Web-Console-Guide-Prism-v6_1%3Awc-system-ntp-servers-wc-t.html]
+3) Setup Nameserver (DNS)
+4) Configure AD Authentication [https://portal.nutanix.com/page/documents/details?targetId=Nutanix-Security-Guide-v6_1:mul-security-authentication-pc-t.html]
+5) Configure SMTP server (Optional)
+6) Configure UI Settings (Optional) [https://portal.nutanix.com/page/documents/details?targetId=Web-Console-Guide-Prism-v6_1%3Awc-ui-settings-modify-wc-t.html]
+7) Configure Welcome Banner (Optional) [https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-Prism-vpc_2022_1%3Amul-welcome-banner-configure-pc-t.html]
+
+
+Nutanix Cloud Manager (NCM)	-> Intelligent Operations Self Service, Cost Governance, Nutanix Security Central
+Nutanix Unified Storage (NUS)	-> Flies, Volumes Block, Objects storages, and Mine Integrated Backup
+Nutanix Cloud Infrastructure (NCI)	-> AOS Storage, AHV Virtualization, Nutanix DR, NC2, Prism
+
+Prism Central support AD, OpenLDAP, SAML, and local user authentication options
+User Admin, Prism Central Admin can be assigned to a local user account created in Prism
+
+
+Controlling Cluster Access Using Cluster Lockdown
+	-> Cluster lockdown can be used to disable password-based authentication and enforce keybased SSH access to the controller VM and the host that have been locked down.
+	-> Only the default 'nutanix' and 'admin' accounts can be used to access a CVM or host that are in lockdown.
+	-> You can create one or more key pairs and add the public keys to enable key-based SSH access.
+	-> https://portal.nutanix.com/page/documents/details?targetId=Nutanix-Security-Guide-v6_1:wc-security-cluster-lockdown-wc-t.html
+
+
+======================= Flow =======================
+-> Flow's security policies using application-centric policy language
+-> You first need to specify the VMs that belong to the application you want to protect
+-> Then identify the networks or entities with which you want to allow those VMs to communicate
+-> Four types of security policies	-> Application Security Policy	-> Select category for VM
+									-> Specify allowed traffic b/w source and destination
+									-> Apply policy to those entities only
+									-> Block all other traffic
+					-> Isolation Environment Policy	-> Block all traffic b/w two groups of VMs
+									-> Prod Category VMs will not be able to communicate with DEV Category VMs
+									-> Inter category communication is available
+					-> Quarantine Policy	-> Isolate an infected VM
+					-> VDI Policy	-> Policy based on users and groups in an AD Domain
+
+
+
+Characteristics of the default virtual switch (vs0)	-> It cannot be deleted.
+							-> The default virtual switch is configured with the Active-Backup uplink bond type.
+
+
+Acropolis Dynamic Scheduler (ADS)	-> Runs every 15 minutes and analyzes resource usage
+					-> Resource utilization of an AHV node > 85% for 15 mins
+					-> Storage hotspot	-> 40 mins of data
+					-> CPU hotspot	-> CPU Usage over 10 mins
+					-> Does not monitor Network / Memory

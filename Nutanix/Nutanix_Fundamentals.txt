@@ -1,0 +1,172 @@
+https://<MGMT_IP>:9440
+Subscription : Prism Ultimate, Universal, Pro
+Node Selection : https://www.nutanix.com/products/hardware-platforms/specsheet?platformProvider=Nutanix
+
+Prism Element
+1) Configuring a cluster virtual IP or the ISCSI data services IP
+2) Leap for automation, Beam
+3) Configure CVM, Convert Cluster, Expand Cluster, Reboot
+
+Prism Central Features
+1) Cost Management
+2) Resource Planning
+3) Task Automation
+4) Services Enablement (Calm, Karbon, Files, Object, and Foundation Central)
+5) Manage multiple clusters
+6) Flow for Network Security
+
+
+
+It is recommended to enable unless providing cluster information to Nutanix customer support violates your security policies
+1) Pulse 	-> Pulse is a feature that provides diagnostic system data to Nutanix customer support, allowing proactive, context-aware support to be delivered for Nutanix solutions.
+		-> it sends a summary email of the cluster configuration to a Nutanix Support server daily by default
+		-> Ports 80/8443/443 (by default) or through your mail server (if configured)
+		-> Pulse only shares basic, system-level information
+		-> https://portal.nutanix.com/page/documents/kbs/details?targetId=kA060000000TSYjCAO
+2) enhanced cluster health monitoring
+
+
+============================ Hardware ============================
+Node [x86 Server]-> HCI Node [AHV, ESXi, HyperV]
+		 -> Storage Only (SO) Node [AHV only]
+		 -> Compute Only (CO) Node [AHV only]
+
+Block -> Chassis that holds one to four nodes
+
+Cluster -> Logical grouping of physical and logical components
+
+
+++++ ROBO (Remote Office - Branch Office) Environment ++++
+Single-Node Cluster 	-> Can run a limited number of guest VMs.
+			-> Supports a replication factor of 2 across drives within the same node.
+			-> Can run either AHV or ESXi as the hypervisor.
+			-> Cannot be expanded.
+			-> Cannot use deduplication and erasure coding.
+
+Two-Node Cluster	-> Can run a limited number of guest VMs.
+			-> Supports a replication factor of 2 over two nodes.
+			-> Can run either AHV or ESXi as the hypervisor.
+			-> Cannot be expanded
+			-> Can use compression
+			-> Cannot use deduplication and erasure coding.
+
+++++ Standard Environment ++++
+
+Three-Node Cluster	-> minimum for a single Nutanix cluster
+			-> Rebuild your data within 60 seconds
+			-> Commit two copies of the data
+
+Four-Node Cluster (+more)	-> Five nodes is the minimum requirement for RF3 (Replication Factor 3)
+				-> Greenfield, where you don’t know how many resources you need for day one or n years from now.
+				-> Brownfield where you know how many resources you need for day one but not n years from now.
+				-> Brownfield where you know how many resources you need for day one and n years from now.
+				-> On-prem solutions where you own/rent the resources required to run the solution.
+
+Nutanix Controller Virtual Machine (CVM)
+	-> The CVM runs the Nutanix software and serves all of the I/O operations for the hypervisor and all VMs running on that host
+	-> Responsible for core platform logic and handles services such as storage IO, storage transforms (like compression, deduplication, and erasure coding), the UI and API, upgrades, and so on
+	-> If a CVM fails, the node itself will continue to operate since storage IO and other services are provided by other CVMs in the cluster
+
+============================ Storage ============================
+AOS Distributed Storage appears to the hypervisor like any centralized storage array, however all IO is handled locally to provide the highest performance.
+
+Storage Tier	-> SSD tier (Performance tier)
+		-> HDD tier (Capacity tier)
+
+Storage Pool	-> Logical representation of all available physical storage
+		-> Consist both SSDs and HDDs
+		-> Physical separation of data as one device can be aligned to one Pool
+
+Storage Container	-> Storage containers are created within a storage pool to hold virtual disks (vDisks) used by VMs
+			-> By default, storage is thinly provisioned
+			-> Storage efficiency features such as compression, deduplication, and erasure coding are enabled at this level
+
+vDisk	-> A vDisk is a file larger than 512 KB on AOS Distributed Storage including VMDK and VM hard disks
+	-> Maximum size of vDisk is 9 exabytes (*1 exabyte - 1 billion gigabyte)
+
+Volume Groups	-> A volume group is a collection of logically related vDisks.
+		-> A volume group is attached to VM either directly or using iSCSI.
+
+
+Three default storage containers will get created at the time of Cluster creation
+1) Nutanix Management Share	-> Built-in storage container
+				-> Used by Nutanix Files and Self-Service Portal (SSP) file storage, feature upgrades and other operations
+2) Self Service Container	-> Built-in Storage container
+				-> Used by Image service features
+3) Deafult Container		-> Built-in Storage container
+				-> Used for regular storage use cases
+
+Redundancy Factor	-> Can only be modified from Prism Element
+			-> Set at the Cluster level
+			-> Number of failures that a cluster is able to withstand while still continuing to operate
+			-> Default with 3 node cluster the value for it is 2 meaning cluster can withstand 1 node or 1 disks failure
+			-> To set value to 3, RF value should be set to 3
+			-> Redundancy Factor cannot be reverted and you cannot reduce the redundancy factor
+
+Replication Factor (RF)	-> Can modified from Prism Element and Central
+			-> Set at the storage container level
+			-> Replication factor refers to the number of copies of data and metadata that will be maintained on a cluster
+			-> RF1 means no copies only 1 original will be there
+
+
+Understanding Failures in a Distributed System
+1) Node Failure	-> HA kicks in and restart HA-Protected VM on another node
+2) CVM Failure	-> If the storage IO process fails to respond two or more times in a 30-second period, the storage path is redirected to the storage IO process on another CVM
+		-> To prevent constant switching between CVMs, the data path is not restored until the original CVM has been stable for 30 seconds.
+		-> Node will be reporting that the shared storage is unavailable
+		-> Guest VMs on this host appear to "hang" until the storage path is restored
+		-> Performance may decrease slightly, because the IO is traveling across the network
+3) Drive Failure	-> Boot Drive Failure	-> CVM boots from a SATA-SSD
+						-> CVM will be failed
+						-> Guest VMs can continue to run
+			-> Metadata Drive Failure	-> Controller VM restarts
+							-> Once the process that stores and manages metadata restarts, the missing metadata is retrieved from the other CVMs and shared across the remaining metadata drives.
+			-> Data Drive Failure	-> Cluster software receives an alert regarding drive failure and immediately begins working to reduce the impact of a second failure
+						-> A second replica of any guest VM data that was stored on the drive is created, to maintain the cluster's replication factor and overall data resiliency
+			-> Network Link Failure	-> If both 10 GB Ports are utilized then no impact
+						-> if not then write performance will decrease as cluster will use 1 GB Port
+
+
+Compression	-> Enabling compression on a storage container can save physical storage space and improve I/O bandwidth and memory usage
+		-> Inline Compression	-> Compress the data as it is written
+		-> Post-process compression	-> Compress after the specific duration (default is 60 min)
+
+Deduplication	-> Deduplication reduces storage space consumed by consolidating duplicate data blocks on Nutanix storage
+		-> Cache	-> Deduplication will be performed on the data available in memory
+				-> Applied to read cache
+		-> Capacity	-> Deduplication will be performed on the data available in HDD
+				-> Not enable by default
+
+Erasure Coding	-> Erasure coding performs a parity calculation for data, and then uses this parity value to rebuild data in the event of a failure.
+		-> The presence of parity ensures redundancy (because data can be rebuilt in the event of a failure), and simultaneously provides space savings
+		-> Data will be saved as (a + b + c + d + P) instead of 2 x (a + b + c + d)
+		-> 4 Nodes -> RF value 2
+		-> 6 Nodes -> RF value 3
+
+
+Snapshots	-> Re-direct on write (ROW) implementation for it's snapshots, nutanix reduces any performace impacts associated with other implementations
+		-> Crash-consistent Snapshots	-> Without memory, power off VM after restore
+		-> Application-consisten snapshots	-> With memory, Power on VM after restore
+
+
+Open vSwitch (OVS)	-> Open-source software switch designed to work in multiserver virtulization environment
+			-> AHV uses it to connect the CVM, the hypervisor and user VMs to each other and to the physical network on each node.
+Bridge	-> Acts as a virtual switch to manage traffic between physical and virtual network interfaces
+Ports	-> Logical constructs created in a bridge that represent connectivity to the virtual switch
+
+
+Image Service	-> This feature available on AHV clusters allows you to import and configure operating system ISO and disk image files using either Prism Central or Prism Element.
+
+Nutanix VirtIO	-> This is a collection of drivers for paravirtual devices that enhance the stability and performance of VMs on AHV.
+OVA	-> Open Virtual Appliance
+
+
+Entity chart	-> Monitors the performance of one or more metrics for a single entity (physical or virtual entity).
+		-> For example, you can create a chart that monitors a particular host, for metrics such as Physical Usage, Free Physical Storage, and Total Memory Usage (including HA).
+
+Metric chart	-> Monitors the performance of a single metric on one or more entities
+		-> For example, you can create a chart that monitors the VMs Memory Usage (%) for a single VM or multiple VMs within a cluster.
+
+
+You perform an inventory to view the currently installed software and firmware versions, along with their last updated time. It also lists which software and firmware need to be updated and the available updates for the cluster.
+List of Pre checks	-> https://portal.nutanix.com/page/documents/kbs/details?targetId=kA032000000bmvzCAA
