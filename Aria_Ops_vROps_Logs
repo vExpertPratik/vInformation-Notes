@@ -1,0 +1,8 @@
+Error Logs :-
+cd /storage/log/vcops/log/pakManager/
+ls -lthr
+cd vRealizeOperationsManagerEnterprise-XXXXXXX
+less apply_system_update_stderr.log (Shift+G)
+less apply_os_update_stderr.log (Shift+G)
+
+Password Modification :- less /etc/pam.d/system-password
