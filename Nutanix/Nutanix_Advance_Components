@@ -1,0 +1,31 @@
+Acropolis	-> Follower	-> Responsible for stat collection and publishing, and provides VNC proxy capabilities
+		-> Leader	-> Responsible for stat collection and publishing, task scheduling and execution, VM placement and scheduling, network controller, and VMC proxy.
+
+Genesis	-> Runs on each node
+	-> Responsible for any services interactions (start/stop/etc.) and initial configuration
+	-> Zookeeper service should be up and running
+
+Zookeeper	-> Stores information about all cluster components (both hardware and software)
+		-> Leader	-> Receives all requests for information and share it with follower nodes
+		-> No dependencies
+
+Zeus	-> Interface to access the information stored within Zookeeper
+	-> Nutanix library that all other components use to access the cluster configuration [Details of H/W (hosts and disks) and S/W (Storage containers)]
+
+Medusa	-> Nutanix abstraction layer that sits in front of the database that holds metadata
+
+Cassandra	-> Stores all metadata about the guest VM data in a Nutanix storage container
+		-> Cassandra runs on all nodes of the cluster
+		-> Nodes use Gossip protocol to keep database consistent
+		-> Depends on Zeus to gather information about cluster configuration
+
+Stargate	-> Key component from Hypervisor perspective
+		-> Receives and processes R/W I/Os via internal switch to stargate process running on particular node
+		-> Depends on Medusa to gather metadata
+		-> Depends on Zeus to gather information about cluster configuration
+
+Curator	-> Leader Node	-> Periodically scans the metadata database and identifies cleanup/optimization tasks
+			-> Share this analyzied data to other nodes
+			-> Send commands to stargate based on the analysis
+			-> Depends on Medusa to gather metadata
+			-> Depends on Zeus to gather information about cluster configuration
