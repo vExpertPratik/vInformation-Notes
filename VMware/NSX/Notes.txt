@@ -1,7 +1,8 @@
 NSX 4.0	-> Merged Management & Control Plane
 	-> KVM Hosts not supported
+	-> Corfu DB is present with synchronous replication in NSX Manager with latency of 10ms
 
-Corfu DB is present with synchronous replication in NSX Manager with latency of 10ms
+#============================================================================================================================================================================#
 
 Virtual IP	-> In-Built 	-> You can set the virtual IP Address using NSX Manaager GUI
 				-> All Manager should be part of same subnet
@@ -10,9 +11,13 @@ Virtual IP	-> In-Built 	-> You can set the virtual IP Address using NSX Manaager
 				-> All NSX Managers can be part of different subnets
 				-> Balances the load as per the hashing algorithm set in LB
 
+#============================================================================================================================================================================#
+
 NSX Manager Size	-> Small [4vCPU, 16GB RAM, 300GB Storage]	-> POC
 			-> Medium [6vCPU, 24GB RAM, 300GB Storage]	-> Less than 128 Transport Nodes
 			-> Large [12vCPU, 48GB RAM, 300GB Storage]	-> Equal to or more than 128 Transport Nodes
+
+#============================================================================================================================================================================#
 
 NSX Manager Cluster Deployment methods
 	With Compute Manager	-> Deploy first NSX Manager
@@ -33,6 +38,8 @@ NSX Manager Cluster Deployment methods
 				-> You can check the cluster status using "get cluster status"
 				-> Once cluster is stable, you can perform the same steps for 3rd NSX Manager
 
+#============================================================================================================================================================================#
+
 NSX Manager Services which are affects the stability of the NSX Manager Cluster
 	-> Datastore
 	-> Cluster_Boot_Manager
@@ -46,7 +53,7 @@ NSX Manager Services which are affects the stability of the NSX Manager Cluster
 	-> CM Inventory
 	-> Corfu Nonconfig
 
-
+#============================================================================================================================================================================#
 
 
 Reverse Proxy Service -> NSX Manager service for registering Transport Node
