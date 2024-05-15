@@ -1,3 +1,54 @@
+NSX 4.0	-> Merged Management & Control Plane
+	-> KVM Hosts not supported
+
+Corfu DB is present with synchronous replication in NSX Manager with latency of 10ms
+
+Virtual IP	-> In-Built 	-> You can set the virtual IP Address using NSX Manaager GUI
+				-> All Manager should be part of same subnet
+				-> It does not work as Load Balancer but the VIP will be mapped to one of the NSX Manaager
+		-> External	-> You need external Load balancer (Ex. NSX ALB)
+				-> All NSX Managers can be part of different subnets
+				-> Balances the load as per the hashing algorithm set in LB
+
+NSX Manager Size	-> Small [4vCPU, 16GB RAM, 300GB Storage]	-> POC
+			-> Medium [6vCPU, 24GB RAM, 300GB Storage]	-> Less than 128 Transport Nodes
+			-> Large [12vCPU, 48GB RAM, 300GB Storage]	-> Equal to or more than 128 Transport Nodes
+
+NSX Manager Cluster Deployment methods
+	With Compute Manager	-> Deploy first NSX Manager
+				-> Add your vCenter environment as compute manager
+				-> Deploy additional Appliances on vCenter Environment
+
+	Without Compute Manager	-> Deploy all the 3 NSX Managers as standalone single node NSX Manager Cluster
+				-> You will not be able to perform it via GUI as it requires Compute Manager
+				-> Hence we will follow CLI Method
+				-> Take Putty session of the 1st NSX Manager
+					-> Run command "get cluster status" to get the Cluster-ID
+					-> Run command "get certificate api thumbprint" to get Thumbprint
+				-> Take Putty session of the 2nd NSX Manager
+					-> Run below command
+					-> Join <1st_NSX_Manager_IP> cluster-id <Cluster-ID> thumbprint <Thumbprint> username <username> password <password>
+				-> By doing this you will erase all the data from 2nd NSX Manager and add it in a cluster with 1st NSX Manager
+				-> Wait until all the respective services are up and cluster status is stable
+				-> You can check the cluster status using "get cluster status"
+				-> Once cluster is stable, you can perform the same steps for 3rd NSX Manager
+
+NSX Manager Services which are affects the stability of the NSX Manager Cluster
+	-> Datastore
+	-> Cluster_Boot_Manager
+	-> Controller
+	-> Manager
+	-> HTTPs
+	-> Messaging Manager
+	-> Site Manager
+	-> Monitoring
+	-> IDPS Reporting
+	-> CM Inventory
+	-> Corfu Nonconfig
+
+
+
+
 Reverse Proxy Service -> NSX Manager service for registering Transport Node
 After NSX 3.0, vDS can use with NSX if vSphere and vDS version is 7 or newer.
 For Overlay traffic, MTU on vDS need to be at least 1600, 1700 (Recommended) or 9000 (Jumbo Frame)
