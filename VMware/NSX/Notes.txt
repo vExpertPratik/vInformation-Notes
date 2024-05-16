@@ -1,5 +1,6 @@
 NSX 4.0	-> Merged Management & Control Plane
 	-> KVM Hosts not supported
+	-> vDS can use with NSX if vSphere and vDS version is 7 or newer
 	-> Corfu DB is present with synchronous replication in NSX Manager with latency of 10ms
 
 #============================================================================================================================================================================#
@@ -55,14 +56,102 @@ NSX Manager Services which are affects the stability of the NSX Manager Cluster
 
 #============================================================================================================================================================================#
 
+For Overlay traffic, MTU on vDS need to be at least 1600, 1700 (Recommended) or 9000 (Jumbo Frame)
+Uplink Profiles	-> No. of Uplinks and Teaming policy defines the number of TEPs created for Transport Node
+			-> Failover	-> Only one TEP
+			-> Load Balance Source [ESXi Transport Nodes Only]
+				-> Balance as per vDS Port ID
+					-> Active - Active
+					-> Multiple TEPs
+				-> Balance as per MAC
+					-> Balance as per MAC Hash
+					-> High Compute
+After the ESXi Node is convereted to Transport Node the respective VMKernal Adapter will get created as per the active Uplinks (i.e. 1 Active Uplink = 1 VMKernel Adapter) for Overlay Traffic.
+One more additional VMKernel Adapter will be created for NSX Hyperbus which is related to Containers networking.
+
+#============================================================================================================================================================================#
+
+Segments	-> Single Broadcast domain (Similar to vLAN)
+		-> VM's are connected to Segment ports
+		-> Two type's of Segments
+			-> vLAN Backed segments
+				-> for vLAN traffic
+				-> connectivity for Physical Network using Edge and T0 Gateways
+			-> Overlay Segments
+				-> Each Overlay segments has 24 bit long unique VNI (Virtual Network Identifier) ID
+				-> for GENEVE (Generic Network Virtualization Encapsulation) traffic
+					-> Provide L2 over L3 Encapsulation (Able to Virtualize L2 over L3)
+					-> GENEVE uses vTEPs or TEPs (Tunnel End Points)
+					-> Encapsulation and Decapsulation happens at TEP's
+					-> GENEVE uses 6081 UDP Port
+					-> GENEVE has extra variable length options unlike VXLAN
+		-> VM's connected to same segment can communicate with each other
+		-> VM's on different segments must use Gateway for communication
+
+GENEVE Header	-> Same Physical Layer 2 (Switch) / Same RACK
+			-> Segment VNI
+			-> Source TEP IP/MAC
+			-> Destination TEP IP/MAC
+		-> Different Physical Layer 2 (Switch) / Different RACK
+			-> Before reaching to Gateway Router
+				-> Segment VNI
+				-> Source TEP IP/MAC
+				-> Destination TEP IP
+				-> Gateway Router Interface MAC Address as Destination MAC
+			-> After reaching to Gateway Router
+				-> Segment VNI
+				-> Source TEP IP
+				-> Destination TEP IP/MAC
+				-> Gateway Router Interface MAC Address as Source MAC
+
+#============================================================================================================================================================================#
+
+BUM (Boradcast, Unicase, Multicast)
+ARP Traffic	-> First Source ESX will check the different available table data
+		-> Then try to communicate with NSX Manager (Central Control Plane) to get the latest table data over Management Network
+		-> If both the time Table does not contain the required information about the destination VM then it will use two different ARP Methods
+			-> Head Replication (Lot of ARP Traffic in Physical Network)
+				-> Source ESX will communicate with all the ESX Nodes mapped with the respective Segment and has Powered On/Running VM on them via TEP's Encapsulation/Decapsulation
+			-> 2 Tier Replication (Comparatively less ARP Traffic in Physical Network)
+				-> Source ESX will communicate with same Physical Layer 2 (Switch) segments / Same RACK ESX nodes mapped with the respective Segment and has Powered On/Running VM on them via TEP's Encapsulation/Decapsulation
+				-> For different Physical Layer 2 (Switch) segments / Different RACK ESX nodes
+					-> It will select one Proxy (mTEP) and ask it to replicate the ARP packet in their respective Physical Layer 2 (Switch) segment/RACK ESX Nodes
+
+#============================================================================================================================================================================#
+
+NSX Tables
+Tables will not get populated if VMs are not in running state on respective Segments
+	-> If Central Control Plane is down
+		-> The Communication will work flawlessly as LCP has copy of these tables
+		-> Newly powered on VM will not be able to communicate unless the TEP IP entry is populated for that particular ESX nodes vTEP IP in TEP Table
+		-> We can not perform the vMotion as it should be mapped with new ESX (Transport) Node
+
+Different Types of Tables
+TEP Table	-> ESX (Transport_ Nodes knows about how to communicate with each other due to data available in this
+		-> Segment VNI
+		-> vTEP MAC
+		-> vTEP IPs
+		-> Segment/Network IP Address (for e.g., 10.10.10.0)
+MAC Table	-> Segment VNI
+		-> VM MAC
+		-> vTEP IP
+ARP Table	-> ARP Table will get flushed if VM's are not going through any network traffic
+		-> Segment VNI
+		-> VM IP
+		-> VM MAC
+
+
+You can check the Table data using the CLI Method by taking the Putty session of NSX Manager
+	-> Run the command "get logical-switch" to get the VNI's for all the available segments
+	-> Run the command "get logical-switch <Segment_VNI> vtep" for vTEP Table
+	-> Run the command "get logical-switch <Segment_VNI> mac" for MAC Table
+	-> Run the command "get logical-switch <Segment_VNI> arp" for ARP Table
+
+You can also download the vTEP and MAC Table using NSX MAnager GUI Network Segment module
+#============================================================================================================================================================================#
 
 Reverse Proxy Service -> NSX Manager service for registering Transport Node
-After NSX 3.0, vDS can use with NSX if vSphere and vDS version is 7 or newer.
-For Overlay traffic, MTU on vDS need to be at least 1600, 1700 (Recommended) or 9000 (Jumbo Frame)
-No. of Uplinks and Teaming policy defines the number of TEPs created for Transport Node
-			-> Failover -> Only one TEP
-			-> Load Balance Source -> Balance as per vDS Port ID -> Active - Active -> Multiple TEPs
-			-> Load Balance Source - MAC -> Balance as per MAC Hash -> High Compute
+
 esxcli software vib list | grep -E 'nsx|vsip'
 vmkping -I (Interface) -s (Size of Package) -d (not defragment) -S vxlan (type of packate) (destination)
 Three NSX Forwarding Tables
