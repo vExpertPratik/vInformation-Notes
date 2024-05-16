@@ -88,6 +88,10 @@ Segments	-> Single Broadcast domain (Similar to vLAN)
 		-> VM's connected to same segment can communicate with each other
 		-> VM's on different segments must use Gateway for communication
 
+#============================================================================================================================================================================#
+
+Traffic Flow with Only Segment in Place over the Overlay Network
+
 GENEVE Header	-> Same Physical Layer 2 (Switch) / Same RACK
 			-> Segment VNI
 			-> Source TEP IP/MAC
@@ -119,7 +123,7 @@ ARP Traffic	-> First Source ESX will check the different available table data
 
 #============================================================================================================================================================================#
 
-NSX Tables
+NSX Forwarding Tables
 Tables will not get populated if VMs are not in running state on respective Segments
 	-> If Central Control Plane is down
 		-> The Communication will work flawlessly as LCP has copy of these tables
@@ -150,16 +154,75 @@ You can check the Table data using the CLI Method by taking the Putty session of
 You can also download the vTEP and MAC Table using NSX MAnager GUI Network Segment module
 #============================================================================================================================================================================#
 
+Gateway Routing	-> Service Router (SR)
+			-> Host Centralized services i.e. NAT, Load Balancing, VPN, etc.
+			-> Located on Edge Transport Node
+			-> Used to provide routing to Physical World
+
+		-> Distributed Router (DR)
+			-> DR Component only used at source Transport Node
+			-> Deployed and located on every Transport Node
+			-> Provides East-west Routing
+			-> Runs as a kernel module
+			-> No hairpinning while performing traffic route between two segments on same host
+
+For Distributed Router (DR)
+	-> Segment connects on LIF (Logical Interface) on Gateways having vMAC and vIP which is same for every LIF
+		->vMAC = 02:50:56:56:44:52 (56:44:52 convert from Hex to ASCHII = vDR)
+	-> The LIF's will have same vIP and vMAC to avoid issue after vMotion of the VM on another host
+
+
+Automatic Link connections
+	-> Tier 0 to Tier 1 Gateway
+		-> Router Link (100.64.0.0/10)
+	-> Service Router (SR) to Distributed Router (DR) [Backplane]
+		-> Intra-Tier Transit Link (169.254.0.0/28)
+		-> It has auto generated VNIs (65,
+536 - 75,000)
+
+#============================================================================================================================================================================#
+
+Edge Node	-> Intel, AMD EPYC, anything else fail (for e.g., Ryzen)
+		-> Physical (Bare Metal)
+			-> Speed depends upon the Physical NIC
+			-> Fast failure detection
+				-> BFD (Bidirectional Forward Detection) [Hello Packet]
+					-> 50ms * 3 = 150ms to detect
+			-> Upto 16 Physical NICs
+
+		-> VM
+			-> vmxnet 3 driver approx. 10 GBps
+			-> Slow failure detection
+				-> BFD (Bidirectional Forward Detection) [Hello Packet]
+					-> 500ms * 3 = 1500ms to detect
+			-> Contains 5 Virtual NICs (4 prior to 3.2.1)
+				-> 1st NIC
+					-> eth0 (Linux IP Stack)
+				-> remaining
+					-> fp-eth0 (fast port ethernet)0,1,2,3
+						-> 2 for Uplink Traffic
+						-> 2 for overlay Traffic
+
+If T0 HA Mode is active active, then we can not run centralized services (NAT, VPN, Firewall)
+Now after NSX 4.0.11 T1 supports the stateful services
+
+Edge-bridge Profile	-> HA for Edge Cluster
+			-> Premptive
+				-> Move all the tasks once node is back
+			-> Non-premptive
+				-> Manual intervention is required to make standby node as active
+
+Edge Cluster	-> Deploy new Edge Node
+		-> Go to Edge Cluster -> Go to Action -> Replace Edge Node from to
+#============================================================================================================================================================================#
+
 Reverse Proxy Service -> NSX Manager service for registering Transport Node
 
 esxcli software vib list | grep -E 'nsx|vsip'
 vmkping -I (Interface) -s (Size of Package) -d (not defragment) -S vxlan (type of packate) (destination)
-Three NSX Forwarding Tables
-	-> TEP Table -> Segment VNI to Host TEP IP Address Mapping
-	-> ARP Table -> VM IP to MAC Mapping
-	-> MAC Table -> VM MAC to Host TEP IP Address Mapping
+
 Intratier Transit Link -> T0 to T1
-If T0 HA Mode is active active, then we can not run centralized services (NAT, VPN, Firewall)
+
 The Data Plane Development Kit (DPDK) is a set of data plane libraries and network interface controller drivers for fast packet processing
 DFW 	-> Ethernet -> L2 Rule
 	-> Emergency -> Quaratine Purpose
@@ -187,10 +250,7 @@ Password Management	-> NSX Manager
 			-> clear user <username> password-expiration
 
 
-Edge-bridge Profile	-> HA for Edge Cluster
-			-> Premptive	-> Move all the tasks once node is back
-			-> Non-premptive -> wait until another node is up and running fine
 
 
-Edge Cluster	-> Deploy new Edge Node
-		-> Go to Edge Cluster -> Go to Action -> Replace Edge Node from to
+
+
