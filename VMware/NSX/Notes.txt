@@ -3,6 +3,20 @@ NSX 4.0	-> Merged Management & Control Plane
 	-> vDS can use with NSX if vSphere and vDS version is 7 or newer
 	-> Corfu DB is present with synchronous replication in NSX Manager with latency of 10ms
 
+NSX Management Cluster	-> NSX Manager Network (MGMT)
+				-> Depends on Appliance Proxy Hub service which is running on NSX Manager
+				-> Communicates with Management Plan Agent Deamon which depends upon NSX-Proxy service
+				-> Depend upon Port 1234
+				-> Used for Stats and Health Status
+				-> Communicates over Managemnet network
+
+			-> Central Control Plane (CCP)
+				-> Depends on Appliance Proxy Hub service which is running on NSX Manager
+				-> Communicates with Local Control Plane Deamon which depends upon NSX-Proxy service
+				-> Depend upon Port 1235
+				-> Used for Rules, Group, Policies
+				-> Communicates over Managemnet network
+
 #============================================================================================================================================================================#
 
 Virtual IP	-> In-Built 	-> You can set the virtual IP Address using NSX Manaager GUI
@@ -173,7 +187,7 @@ For Distributed Router (DR)
 
 
 Automatic Link connections
-	-> Tier 0 to Tier 1 Gateway
+	-> Tier 0 to Tier 1 Gateway [Linked]
 		-> Router Link (100.64.0.0/10)
 	-> Service Router (SR) to Distributed Router (DR) [Backplane]
 		-> Intra-Tier Transit Link (169.254.0.0/28)
@@ -216,6 +230,52 @@ Edge Cluster	-> Deploy new Edge Node
 		-> Go to Edge Cluster -> Go to Action -> Replace Edge Node from to
 #============================================================================================================================================================================#
 
+Troubleshooting NSX Manager Connectivity
+		-> Start with Monitoring Dashboards available in NSX Manager GUI
+		-> Check whether 1234 / 1235 is listening on ESX (Transport) Node
+			-> Take SSH of the ESX Node
+			-> Run command "esxcli network ip connection list | grep 1234", this will show all the available NSX Managers
+			-> Run command "esxcli network ip connection list | grep 1235", this will show only one NSX Manager acting as Central Control Plane due to sharding meaning each NSX Manager will manage set of ESX (Transport) Node
+
+		-> If ESX (Transport) Node is not listening on port 1234 and 1235 then check the respective services especially "NSX-Proxy" service
+		-> Run command "/etc/init.d/nsx-proxy status" to get the status of the service
+
+
+Troubleshooting Tunnels	-> Tunnels will not get established if
+				-> ESX (Transport) Node is in maintenance mode
+				-> VMs are not in powered on state on that respective ESX (Transport) Node
+				-> VMs running on the ESX (Transport) Node is not using NSX Segment
+				-> VMs are not present on the respective ESX (Transport) Node
+			-> 1st by looking at the Hosts section of GUI try to identify the faulty ESX (Transport) Node
+			-> Now, take the SSH of the faulty ESX (Transport) Node
+			-> Run command "esxcfg-vmknic --list" to list down VMKernel ports
+			-> Run command "vmkping ++netstack=vxlan <TEP_IP_OF_OTHER_NODE>", this will allow you to identify whether the VMKernel port is up or not
+			-> Run command "vmkping ++netstack=vxlan <TEP_IP_OF_OTHER_NODE> -s <Size_of_Packet> -d"
+				-> This will allow you to specify the Packet Size to check whether Jumbo Packets are allowed or not without defragmenting it
+				-> Note TCP and ICMP header is of 28 bytes so subtract that and then only put the Size (for e.g., if you want to set the size 1600 then mention 1572)
+
+
+Troubleshooting Routing	-> 1st use Traceflow under "Plan & Troubleshoot" module of NSX Manager GUI from both Policy and Manager interface
+				-> If Policy and Manager Interface is not visible
+					-> then go to "System" -> "General Settings"
+					-> Set "Toggle Visibility" to "Visible to All Users" 
+			-> If you try to connect to Physical world then this method will only check till Tier 0 i.e. Edge Node on which Tier0 is located
+			-> If everything is green till NSX Edge part then check the Routing tables
+				-> Take the SSH of the Edge Node on which Service Router is hosted
+				-> Run command "get-logicalrouter", this will show all the logical routers and their VRFs
+				-> Run command "vrf <VRF_of_SR>", this will take you inside the respective VRF
+				-> Run command "get route", this will show you all the routes and thier via interface/gateway
+				-> Verify whether the respective segment with which VM is mapped is visible under route section or not
+			-> If the segment is not visible under "get route" command output
+				-> then the problem is route distribution
+					-> Tier 1
+						-> Route publishing
+					-> Tier 0
+						-> Route advertisement
+			-> Also if everything seems okay, then verify whether the Edge Node is mapped with both Overlay and vLAN Transport Zone
+			-> Edge and Transport Node should use same Overlay Transport Zone, then only the communication will work between them for North South Traffic forwarding
+
+#============================================================================================================================================================================#
 Reverse Proxy Service -> NSX Manager service for registering Transport Node
 
 esxcli software vib list | grep -E 'nsx|vsip'
