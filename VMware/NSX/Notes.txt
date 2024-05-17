@@ -182,7 +182,7 @@ Gateway Routing	-> Service Router (SR)
 
 For Distributed Router (DR)
 	-> Segment connects on LIF (Logical Interface) on Gateways having vMAC and vIP which is same for every LIF
-		->vMAC = 02:50:56:56:44:52 (56:44:52 convert from Hex to ASCHII = vDR)
+		->vMAC = 02:50:56:56:44:52 (56:44:52 convert from Hex to ASCII = vDR)
 	-> The LIF's will have same vIP and vMAC to avoid issue after vMotion of the VM on another host
 
 
@@ -213,7 +213,7 @@ Edge Node	-> Intel, AMD EPYC, anything else fail (for e.g., Ryzen)
 				-> 1st NIC
 					-> eth0 (Linux IP Stack)
 				-> remaining
-					-> fp-eth0 (fast port ethernet)0,1,2,3
+					-> fp-eth0 (fast path ethernet)0,1,2,3
 						-> 2 for Uplink Traffic
 						-> 2 for overlay Traffic
 
@@ -275,7 +275,46 @@ Troubleshooting Routing	-> 1st use Traceflow under "Plan & Troubleshoot" module 
 			-> Also if everything seems okay, then verify whether the Edge Node is mapped with both Overlay and vLAN Transport Zone
 			-> Edge and Transport Node should use same Overlay Transport Zone, then only the communication will work between them for North South Traffic forwarding
 
+
+Troubleshoot Dropped Packets	-> Take SSH of NSX Manager
+				-> Run command "get interface"
+				-> Run command "get interface"
+
 #============================================================================================================================================================================#
+
+Packet Capture at the NSX Edge Node
+	-> Take SSH of the NSX Edge Node using admin user
+	-> Run command "get interfaces"
+		-> This will show all the available interfaces
+		-> In case the Edge node is VM then you will find eth0, fp-eth0, fp-eth1, fp-eth2, fp-eth3 interfaces
+
+	-> Run command "start capture interface <fp-eth0> count 20 file <mycapture>"
+		-> This will save the 20 lines of traffic passing via fp-eth0 interface in mycapture file located under NSX Managers "/image/vmware/nsx/file-store" path
+		-> You can open this saved file in wireshark for further analysis
+
+	-> Run command "start capture interface <fp-eth0> count 5 expression ip <IP_Address>"
+		-> This will show the first 5 lines of traffic passing via fp-eth0 interface containing the respective IP Address
+
+	-> The output of above commands will vary once you change the interface from vLAN to Overlay
+	-> Overlay traffic packet contains
+		-> Timestamp
+		-> GENEVE Header
+			-> Source and Destination TEP MAC
+			-> Source and Destination TEP IP
+			-> VNI (Hexa value)
+				-> You can convert it to Decimal and match it with the output of 
+					-> "get logical-routers"
+						-> "vrf <VRF_of_SR>"
+						-> "get interface"
+						-> The backplane (DR to SR connection) VNI
+					-> "get logical-switch"
+				-> BFD packets has VNI of 0x0
+		-> Actual Packet
+		-> Payload data
+		 
+#============================================================================================================================================================================#
+
+
 Reverse Proxy Service -> NSX Manager service for registering Transport Node
 
 esxcli software vib list | grep -E 'nsx|vsip'
