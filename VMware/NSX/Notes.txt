@@ -191,8 +191,7 @@ Automatic Link connections
 		-> Router Link (100.64.0.0/10)
 	-> Service Router (SR) to Distributed Router (DR) [Backplane]
 		-> Intra-Tier Transit Link (169.254.0.0/28)
-		-> It has auto generated VNIs (65,
-536 - 75,000)
+		-> It has auto generated VNIs (65,536 - 75,000)
 
 #============================================================================================================================================================================#
 
