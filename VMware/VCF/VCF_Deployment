@@ -1,0 +1,107 @@
+VCF Deployment
+
+VMware Licensing Matrix (May 2023): https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/products/cloud-foundation/vmw-vcf-edition-matrix.pdf
+  -> Minimum of 4 physical nodes required for management workload domain
+  -> Minimum of 3 physical nodes required for VI workload domain
+
+  -> VMware Cloud Foundation Architecture
+    -> Standard Architecture
+      -> Different Mangement Workload domain and VI Workload domains
+      -> Minimum of 7 physical nodes required for deployment
+    -> Consolidated
+      -> Customers with a small environment (or a PoC) with all in one environment
+      -> Minimum of 4 physical nodes required for deployment
+
+#============================================================================================================================================================================#
+
+Cloud Builder VM Deployment
+VMware Documentation  -> https://docs.vmware.com/en/VMware-Cloud-Foundation/3.10/vcf-deploy/GUID-CB40D2E9-0714-4152-98D6-F9A5ACC074C7.html
+
+For deploying the vCF, we need to first deploy the cloud builder VM which includes VMware Imaging Appliance for installing ESXi
+  -> Cloud builder VM will deploy and configure the MGMT Domain and transfer inventory and control to SDDC Manager
+  -> During deployment of MGMT Domain Cloud Builder VM validates Network Information
+    -> DNS
+    -> Network (vLANs, IPs, MTUs)
+    -> NTP's
+    -> Credentials
+  -> Both the ESXi Nodes and Cloud Builder VM should be in same L2 domain
+
+#============================================================================================================================================================================#
+
+ESXi Imaging
+
+You can use two method
+  -> Manually prepare the host with supported version of ESXi
+  -> Use VMware Imaging Appliance (VIA)
+    -> Download Supported ESXi ISO and vSphere Installation Bundles (VIBs)
+      -> Can verify the Bill of Material (BOM) section of respective vCF Documentation
+    -> SSH to Cloud Builder VM and update respective Network information in "via.properties" file available in "/opt/vmware/evorack-imaging/config" directory
+    -> Restart the imaging service "systemctl restart imaging.service"
+    -> Login with admin credentials on Cloud builder VM Portal available on "https://<Cloud_Builder_VM_IP>:8445/via"
+      -> Upload the ESXi ISO and VIBs under "Bundle" section
+      -> Use "Imaging" section for updating IP, hostname and NTP details for respective ESXi hosts
+    -> Post Imaging we can modify the vLAN Tagging
+    -> Default root credentials will be "root" and "EvoSddc!2016"
+
+#============================================================================================================================================================================#
+
+Initiate the Cloud Foundation Bring-Up Process
+
+Logs for this steps will be stored on Cloud Builder VM under 
+  -> /opt/vmware/bringup/logs/vcf-bringup-debug.log
+
+  -> Download and complete the deployment Parameter sheet
+    -> This sheet includes information about networks (Network IP Pools, NTP, Distriubted switches, IPs), hosts, license keys, NSX Managers, credentials
+  -> You can upload the updated file on Cloud builder VM Portal by navigating to "https://<Cloud_Builder_VM_IP>"
+  -> After updating the sheet, audit tasks are performed for validation
+    -> JSON/XLSX Validation
+    -> Host and IP DNS Records
+    -> ESXi Host Readiness
+    -> vSAN Disk Availability
+    -> License Key Format
+    -> Password Validation
+    -> Network Configuration
+    -> Network Connectivity
+    -> Time Synchronization
+    -> Network IP Pools
+    -> Cloud Builder Readiness
+    -> ESXi Host version  -> Compare with manifest file located in "/opt/evosddc/bundle/scripts/manifest.json"
+
+  -> Once Bring up is succesful, Configure the Dual Authentication for certain tasks, such as updating or rotating passwords and configuring NSX Manager backups
+    -> Log into management vCenter Server using the vSphere Client.
+    -> Navigate to "Administration > Single Sign On > Users and Groups".
+    -> Add new user
+    -> Create a group named "Sddc_Secured_Access" and add the new user in this group to make that user a privilege user
+  -> The administrator@vsphere.local user cannot be the privileged user.
+
+#============================================================================================================================================================================#
+
+Troubleshooting Cloud Foundation Deployment
+
+  -> Supportability and Serviceability (SoS) Tool
+
+    -> Run SoS tool operations in the Cloud Builder VM to debug a failed bring-up of Cloud Foundation.
+    -> To run the SOS Tool follow below steps  -> SSH into Cloud Builder as admin
+                                        -> Run command "su", to switch to the root user
+                                        -> Run command "cd /opt/vmware/sddc-support/", to switch to respective directory
+                                        -> Run command "./sos --option-1 --option-2...--option-n"
+                                        -> You can use below options
+                                          -> --help / -h
+                                            -> Provide a summary of the available SOS tool options
+                                          -> --version / -v
+                                            -> Provides the SOS Tool's version number
+                                          -> --force
+                                            -> Allows SoS operations from the Cloud Builder VM after bring-up.
+                                          -> --health-check
+                                            -> Performs all available health checks.
+
+-> Log Files available on Cloud Builder VM
+  -> /var/log/vmware/vcf/sddc-support/
+    -> JsonGenerator
+    -> PlatformAudit
+  -> /var/log/vmware/vcf/bringup/
+    -> vcf-bringup.log
+    -> vcf-bringup-debug.log
+    -> rest-api-debug.log
+  -> /var/log/vmware/vcf/sddc-support/sos-timestamp/
+    -> sos.log
