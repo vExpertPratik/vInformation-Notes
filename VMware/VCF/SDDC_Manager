@@ -1,0 +1,73 @@
+VMware Documentation
+  -> https://docs.vmware.com/en/VMware-Cloud-Foundation/5.1/vcf-admin/GUID-D143F07A-B3FA-4A14-8D03-BFD2C1810D2E.html
+
+Troubleshooting Documentation
+  -> https://docs.vmware.com/en/VMware-Cloud-Foundation/4.5/vcf-operations/GUID-B29A8186-4779-4549-834C-47A7C10499E7.html
+#============================================================================================================================================================================#
+
+SDDC Manager
+
+  -> SDDC Manager is a preconfigured virtual appliance that is deployed in the management workload domain for creating VI workload domains
+  -> Provisioning additional virtual infrastructure and lifecycle management of all the software-defined data center (SDDC) management components.
+  -> SDDC Manager is used for
+    -> Commissioning or decommissioning ESXi hosts
+    -> Deployment of workload domains
+    -> Extension of clusters in the management and workload domains with ESXi hosts
+    -> Adding clusters to the management domain and workload domains
+    -> Support for network pools for host configuration in a workload domain
+    -> Product licenses storage
+    -> Deployment of vRealize Suite components.
+    -> Lifecycle management of the virtual infrastructure components in all workload domains, and of vRealize Suite Lifecycle Manager components.
+    -> Certificate management
+    -> Password management and rotation
+    -> NSX-T Edge cluster deployment in the management domain and workload domains
+    -> Backup configuration
+
+#============================================================================================================================================================================#
+
+SDDC Manager Services
+->/opt/vmware/vcf/operationsmanager/scripts/cli/sddcmanager_restart_services.sh
+  -> v4.X
+    -> LCM
+    -> Domain Manager
+    -> Operations Manager
+    -> SDDC-Manager-UI-App
+    -> Solutions Manager
+
+  -> v2.X
+    -> System Controller Service -> Systemctl stop scs
+    -> Bringup service -> systemctl stop bringup
+    -> Bringup UI service -> systemctl stop bringup-ui
+    -> SDDC Manager -> systemctl stop vcfmanager
+    -> Hardware Monitoring Service -> systemctl stop hms
+    -> Lifecyle Manager -> systemctl stop lcm
+    -> Cassandra database -> systemctl stop cassandra
+    -> Zookeeper service -> systemctl stop zookeeper
+    -> Postgres database -> systemctl stop postgres
+    -> Unbound DNS service -> systemctl stop unbound
+
+#============================================================================================================================================================================#
+
+Logs available in SDDC Manager
+
+  -> 	/var/log/vmware/vcf/operationsmanager/operationsmanager.log
+    -> Licensing
+    -> Host Commission/Decommission
+    -> Certificate Operations
+
+  -> /var/log/vmware/vcf/commonsvcs/vcf-commonsvcs.log
+    -> Network Pool
+    -> API Login
+
+  -> 	/var/log/vmware/vcf/domainmanager/domainmanager.log
+    -> VI (WLD domain)
+    -> vRLI
+    -> vROps
+    -> vRA
+    -> vRSLCM Deployment
+
+  -> /var/log/vmware/vcf/lcm/lcm.log
+    -> LCM
+
+  -> /var/log/vmware/vcf/sddc-support/vcf-sos-svcs.log
+    -> SOS
