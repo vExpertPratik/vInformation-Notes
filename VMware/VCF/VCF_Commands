@@ -42,3 +42,41 @@ Troubleshooting the vSAN Issue
   -> esxcli vsan storage list
   -> esxcli vsan storage remove -u <UUID_of_Failed_Host>
   -> Claim the un-used disks
+
+
+Skip Hosts During ESXi Update
+  ->  curl 'https://<SDDC_MANAGER_IP>/v1/hosts' -i -u '<username:password>' -X GET -H 'Accept: 
+application/json' |json_pp
+    -> Copy the Host ID
+  -> Open the /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties file
+  -> Add the below line at the end of file
+    -> esx.upgrade.skip.host.ids=<hostid1>,<hostid2>
+  -> systemctl restart lcm
+
+
+Upgrade ESXi with Cloud Foundation Stock ISO and Async Drivers
+  -> Create a directory for the vendor provided async drivers under the /nfs/vmware/vcf/
+ nfs-mount directory. For example, /nfs/vmware/vcf/nfs-mount/esx-upgrade-partner
+drivers/drivers
+  -> chmod -R 775 /nfs/vmware/vcf/nfs-mount/esx-upgrade-partner-drivers/drivers
+  ->  chown -R vcf_lcm:vcf /nfs/vmware/vcf/nfs-mount/esx-upgrade-partner
+drivers/drivers
+  -> Create Custom JSON File
+ {
+ "esxCustomImageSpecList": [{
+ "bundleId": "ID",
+ "useVcfBundle": true,
+ "esxPatchesAbsolutePaths": [
+ "Path_to_Drivers"
+ ]
+ }]
+ }
+
+  -> Save the JSON file as esx-custom-image-upgrade-spec.json in the /nfs/vmware/vcf/
+ nfs-mount.
+  -> chmod -R 775 /nfs/vmware/vcf/nfs-mount/esx-custom-image-upgrade-spec.json
+  -> chown -R vcf_lcm:vcf /nfs/vmware/vcf/nfs-mount/esx-custom-image-upgrade
+spec.json
+
+  -> Open the /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties file.
+  -> In the lcm.esx.upgrade.custom.image.spec= parameter, add the path to the JSON file.
