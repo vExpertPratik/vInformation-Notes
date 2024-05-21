@@ -1,0 +1,44 @@
+Regenerate ESXi host certificate
+  -> /sbin/generate-certificate
+  -> /etc/init.d/hostd restart && /etc/init.d/vpxa restart
+
+Remove the Edge Cluster from vCF
+  -> cd /home/vcf/cleanup
+  -> ./remove_edge_cluster.sh --user <Administrator@vsphere.local> --password <password> --cluster <edge_cluster_name>
+
+Stop task in vCF
+  -> systemctl restart domainmanager
+  -> systemctl restart operationmanager
+  -> systemctl restart commonsvc.service
+
+Removing task which is in stuck state in vCF
+  -> Click on the task which you want to kill
+  -> It will get expand and in URL you can find the task ID for the respective task
+  -> SSH into SDDC Manager as vcf/admin and switch to root "su - root"
+  -> curl -X DELETE http://localhost/tasks/registrations/<taskID> (replace the id with the task id from your environment.
+
+
+Incorrect or Duplicate IP Assignment When Adding Hosts
+  -> SSH into SDDC Manager as vcf/admin and switch to root "su - root"
+  -> psql -h localhost -U postgres
+  -> "\x" for extended the commands
+  -> "\c platform" for connecting to Platform database
+  -> "select * from vcf_network where type=’VMOTION’;" for printing the IP used for VMOTION
+  -> update vcf_network set used_ip_addresses='["IP_ADD_1","IP_ADD_2"]' where id='<ID_of_Network_Record>';
+  -> update vcf_network set free_ip_addresses='["IP_ADD_1"]' where id='<ID_of_Network_Record>';
+
+Removing a  Host From the SDDC Manager Database
+  -> SSH into SDDC Manager as vcf/admin and switch to root "su - root"
+  -> psql -h localhost -U postgres
+  -> "\x" for extended the commands
+  -> "\c platform" for connecting to Platform database
+  -> delete from host_and_cluster where host_id='<hostID>';
+  -> delete from host_and_domain where host_id='<hostID>';
+  -> delete from host_and_network_pool where host_id='<hostID>';
+  -> delete from host_and_vcenter where host_id='<hostID>';
+  -> delete from host where id='<hostID>';
+
+Troubleshooting the vSAN Issue
+  -> esxcli vsan storage list
+  -> esxcli vsan storage remove -u <UUID_of_Failed_Host>
+  -> Claim the un-used disks
