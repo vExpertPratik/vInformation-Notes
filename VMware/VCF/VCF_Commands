@@ -80,3 +80,10 @@ spec.json
 
   -> Open the /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties file.
   -> In the lcm.esx.upgrade.custom.image.spec= parameter, add the path to the JSON file.
+
+
+
+
+VCF Host configuration status is error
+curl localhost/inventory/entities/<hostID> -X PATCH -d '{"type" : "ESXI","status":"ACTIVE"}' -H 'Content-Tye:application/json'
+
