@@ -3,6 +3,10 @@ VMware Documentation
 
 Troubleshooting Documentation
   -> https://docs.vmware.com/en/VMware-Cloud-Foundation/4.5/vcf-operations/GUID-B29A8186-4779-4549-834C-47A7C10499E7.html
+
+Database Available in PostgresSQL
+  -> Platform
+  -> domainmanager
 #============================================================================================================================================================================#
 
 SDDC Manager
