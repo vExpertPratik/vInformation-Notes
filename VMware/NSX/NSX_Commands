@@ -1,0 +1,19 @@
+-> get cluster status
+  -> Print Cluster ID
+  -> Print Cluster status
+  -> Print UUID of the nodes
+-> detach node <UUID_of_Node>
+-> get certufucate api thumbprint
+-> join <Primary_Node_IP> cluster-id <Cluster_ID> thumbprint <thumbprint> username <username> password <password>
+-> deactivate cluster
+  -> Use it in case of 2 NSX Manager Failure
+  -> This is time consuming process
+-> get logical-switch
+  -> Segment VNI, Name
+-> get logical-switch <VNI> vtep
+-> get logical-switch <VNI> mac
+-> get logical-switch <VNI> arp
+-> get logical-router
+  -> vrf <vrf_id>
+  -> get route
+  -> get interface
