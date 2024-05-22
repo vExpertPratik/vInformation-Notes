@@ -7,6 +7,8 @@ less apply_os_update_stderr.log (Shift+G)
 
 #============================================================================================================================================================================#
 
+Password Modification :- less /etc/pam.d/system-password
+
 Unable to Upgrade vROps
 VMware KB: vRealize/Aria Operations admin account getting locked even after password reset (89599) (vmware.com)
 
@@ -16,4 +18,18 @@ VMware KB: vRealize/Aria Operations admin account getting locked even after pass
 -> Later we checked in the vROps notification and found that vRLI connector is not able to communicate so we added new account and reset the password for local account of vROps
 -> Later when we initiated the Upgrade again it failed due to collector issue
 	-> https://blogs.vmware.com/professional-services/2021/12/step-by-step-guide-migrate-vmware-vrealize-application-remote-collector-to-vmware-vrealize-cloud-proxy.html
-Password Modification :- less /etc/pam.d/system-password
+
+#============================================================================================================================================================================#
+
+Upgrade Aria Operations managed by vRLCM
+
+-> Update the binaries of respective product (in our case, Aria Ops)
+	-> Use "Binary Mapping" fucntion available under "Settings" section of vRealize LCM
+-> Update the Product support packs (PSP)
+	-> Use "PSP" function available under "Settings" section of vRealize LCM
+	-> Check the support Packs online
+	-> Once identify the correct product hit the "Apply Version"
+	-> Take a snapshot of the respective target server and wait for it to finish
+
+#============================================================================================================================================================================#
+
