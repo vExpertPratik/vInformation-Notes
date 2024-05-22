@@ -1,0 +1,19 @@
+Error Logs :-
+cd /storage/log/vcops/log/pakManager/
+ls -lthr
+cd vRealizeOperationsManagerEnterprise-XXXXXXX
+less apply_system_update_stderr.log (Shift+G)
+less apply_os_update_stderr.log (Shift+G)
+
+#============================================================================================================================================================================#
+
+Unable to Upgrade vROps
+VMware KB: vRealize/Aria Operations admin account getting locked even after password reset (89599) (vmware.com)
+
+-> SSH to master node of vROps and use below command to identify client IP who is trying multiple times
+	-> grep -a /auth\/token\/acquire.* /storage/log/vcops
+-> We found out that the client IP is one of the interface of NSX Edge node using vRNI
+-> Later we checked in the vROps notification and found that vRLI connector is not able to communicate so we added new account and reset the password for local account of vROps
+-> Later when we initiated the Upgrade again it failed due to collector issue
+	-> https://blogs.vmware.com/professional-services/2021/12/step-by-step-guide-migrate-vmware-vrealize-application-remote-collector-to-vmware-vrealize-cloud-proxy.html
+Password Modification :- less /etc/pam.d/system-password
