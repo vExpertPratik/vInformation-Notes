@@ -145,7 +145,7 @@ Tables will not get populated if VMs are not in running state on respective Segm
 		-> We can not perform the vMotion as it should be mapped with new ESX (Transport) Node
 
 Different Types of Tables
-TEP Table	-> ESX (Transport_ Nodes knows about how to communicate with each other due to data available in this
+TEP Table	-> ESX (Transport) Nodes knows about how to communicate with each other due to data available in this
 		-> Segment VNI
 		-> vTEP MAC
 		-> vTEP IPs
