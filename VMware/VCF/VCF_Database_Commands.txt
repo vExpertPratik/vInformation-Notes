@@ -1,0 +1,24 @@
+# Working with VCF Database
+
+Login as "vcf" to SDDC Manager
+Switch to "root" using "su -"
+Run "psql -h localhost -U postgres"														# For connecting to postgres SQL database hosted in SDDC Manager
+Run "\l"																	# For listing all the available databases
+Run "\c platform"																# For connecting to Platform database as it holds VCF Data
+Run "\dt"																	# For listing all the available Tables
+
+
+# Now here in below use case I am trying to modify the IP Address Range of existing VCF IP Address Pool which we can not do from GUI
+select * from vcf_network;															# For getting the id of the IP Pool for which modification is required
+Update vcf_network SET ip_inclusion_ranges='[{"start": "10.1.3.101","end": "10.1.3.107"}]' where id='<ID_of_IP_Network_Pool>';			# For updating the "ip_inclusion_ranges" column of the "vcf_network" table
+update vcf_network SET free_ip_addresses='[10.1.3.105, 10.1.3.106, 10.1.3.107]' where id='<ID_of_IP_Network_Pool>';				# For updating the "free_ip_addresses" column of the "vcf_network" table
+
+
+
+Run "\q"																	# For quitting from psql console
+
+
+# If the respective changes are not reflecting in the SDDC Manager Console try to logout and login back
+# If still changes are not reflecting then restart the services which are responsible for updating the SDDC Manager GUI meta data
+
+echo 'y' | /opt/vmware/vcf/operationsmanager/scripts/cli/sddcmanager_restart_services.sh							# This will restart "commonsvcs, domainmanager, lcm, operationsmanager, sddc-manager-ui-app" services
