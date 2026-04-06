@@ -1,0 +1,55 @@
+# Pushing Image to Harbor
+
+# Only at first time login
+cd /etc/docker/certs.d
+mkdir <Harbor_FQDN>
+openssl s_client --connect <Harbor_FQDN>:443	# Copy the server certificate
+vi ca.crt	# Copy the server certificate value and save the file
+systemctl restart docker
+systemctl status docker
+
+docker login <Harbor_FQDN>
+
+docker images	# Display all images
+docker tag <App Name>:latest <Harbor URL>/<Project Name>/<App Name>:latest	# Add tag to the respective image
+
+docker push <Harbor URL>/<Project Name>/<App Name>:latest
+imgpkg copy --tar <TAR_File> --to-repo <Harbor URL>/<Project Name>/<App Name> --registry-ca-cert-path /etc/docker/certs.d/<Harbor_FQDN>/ca.crt
+
+
+
+
+# Managing the VKS Cluster using cmd
+
+kubectl cluster-info
+
+kubectl vsphere login –vsphere-username=administrator@wld.sso –server=https://10.1.0.2 –insecure-skip-tls-verify
+
+vcf version
+
+vcf context create supervisor --endpoint https://10.1.0.2 -u administrator@wld.sso --insecure-skip-tls-verify --auth-type basic
+
+vcf context use supervisor:namespace-1	# Creating context for vSphere namespace namespace-1
+
+kubectl get cluster	# Shows the deployed VKS Cluster
+
+
+vcf context create vks-01 --endpoint https://10.1.0.2 -u administrator@wld.sso --workload-cluster-name vks-01 --workload-cluster-namespace namespace-1 --insecure-skip-tls-verify --auth-type basic	# Creating context for VKS Cluster
+
+vcf context use vks-01:vks-01	# Use the correct context
+
+vcf context list	# Verify the correct context is in use
+
+kubectl get nodes
+
+# Create a YAML File for application Deployment
+
+kubectl create ns app	# Creating Kubernetes Namespace
+
+kubectl label --overwrite ns app pod-security.kubernetes.io/enforce=privileged	# Set the pod security policy
+
+kubectl create secret docker-registry harbor-creds --docker-server=10.1.0.7 --docker-username=admin --docker-password=VMware123! -n app	# Create pull secret for harbor, so that we can pull the image from harbor
+
+kubectl apply -f nginx-deploy.yaml -n app	# Deploying the application
+
+kubectl get all -n app	# fetching everything running under Kubernetes namespace and to get the external IP
