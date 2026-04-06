@@ -1,3 +1,24 @@
+# Managing the VKS Supervisor from vCenter Putty
+vCenter via Putty
+cat /root/.ssh/known_hosts
+cd /usr/lib/vmware-wcp
+./decryptK8Pwd.py
+
+
+ssh root@<IP_Address>
+curl -vk telnet://<vCenter_FQDN>:443 --interface eth1
+
+kubectl get ns
+kubectl get secret -n <vSphere_NS> | grep -i password
+kubectl get secret -n <vSphere_NS> <vSphere_NS_Cluster>-ssh-password -o yaml
+echo <ssh-passwordKey> | base64 -d
+
+ssh vmware-system-user@<Worker_Node_IP>
+sudo -i
+
+curl -vk telnet://<Harbor_FQDN>:443
+
+
 # Pushing Image to Harbor
 
 # Only at first time login
